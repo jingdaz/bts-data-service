@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.broadviewsoft</groupId>
-	<artifactId>dts</artifactId>
+	<artifactId>bts</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>dts</name>
 	<description>BroadviewSoft DataService project for Spring Boot</description>
