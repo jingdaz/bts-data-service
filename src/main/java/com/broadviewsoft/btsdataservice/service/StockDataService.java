@@ -45,15 +45,33 @@ public class StockDataService {
 		return new RestTemplate(factory);
 		
 	}
-
+	
+	@CrossOrigin(origins = "http://localhost:4200")
 	@RequestMapping(value = "/bts/api/v1/stockdata")
-	public String getStockData() {
+	public String getStockData(
+			@RequestParam String function,
+			@RequestParam String symbol,
+			@RequestParam String interval,
+			@RequestParam String outputsize,
+			@RequestParam String apikey) {
 		HttpHeaders headers = new HttpHeaders();
+		
 		headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+		headers.setAccessControlAllowOrigin("*");
+		headers.setAccessControlAllowMethods(Arrays.asList(HttpMethod.GET, HttpMethod.OPTIONS));
 		HttpEntity<String> entity = new HttpEntity<String>(headers);
-
+		
+		String apiUrl = String.format(
+				"https://www.alphavantage.co/query?function=%s&symbol=%s&interval=%s&outputsize=%s&apikey=%s",
+				function,
+				symbol,
+				interval,
+				outputsize,
+				apikey);
+		
+		//https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=AAPL&interval=1min&outputsize=full&apikey=S9BAE8JQTXYTDQJS
 		return template.exchange(
-				"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=AAPL&interval=1min&outputsize=full&apikey=S9BAE8JQTXYTDQJS",
+				apiUrl,
 				HttpMethod.GET, entity, String.class).getBody();
 	}
 }
