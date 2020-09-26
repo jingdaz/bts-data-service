@@ -43,17 +43,26 @@ public class StockDataService {
 		HttpClient httpClient = HttpClients.custom().setSSLSocketFactory(socketFactory).build();
 		HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);
 		return new RestTemplate(factory);
-		
 	}
 
 	@RequestMapping(value = "/bts/api/v1/stockdata")
-	public String getStockData() {
+	public String getStockData(
+			@RequestParam(value = "symbol") String symbol, 
+			@RequestParam(value = "interval") String interval, 
+			@RequestParam(value = "outputsize") String outputsize) {
 		HttpHeaders headers = new HttpHeaders();
 		headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+		headers.setAccessControlAllowOrigin("*");
 		HttpEntity<String> entity = new HttpEntity<String>(headers);
-
-		return template.exchange(
-				"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=AAPL&interval=1min&outputsize=full&apikey=S9BAE8JQTXYTDQJS",
-				HttpMethod.GET, entity, String.class).getBody();
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append("https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=");
+		sb.append(symbol);
+		sb.append("&interval=");
+		sb.append(interval);
+		sb.append("&outputsize=");
+		sb.append(outputsize);
+		sb.append("&apikey=S9BAE8JQTXYTDQJS");
+		return template.exchange(sb.toString(), HttpMethod.GET, entity, String.class).getBody();
 	}
 }
