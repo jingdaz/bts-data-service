@@ -45,6 +45,7 @@ public class StockDataService {
 		return new RestTemplate(factory);
 	}
 
+	@CrossOrigin(origins = "http://localhost:4200")
 	@RequestMapping(value = "/bts/api/v1/stockdata")
 	public String getStockData(
 			@RequestParam(value = "symbol") String symbol, 
