@@ -1,9 +1,10 @@
 package com.broadviewsoft.btsdataservice.service;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.http.client.HttpClient;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.HttpClients;
-//import org.apache.http.impl.client.HttpClients;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpEntity;
@@ -22,6 +23,7 @@ import org.apache.http.ssl.SSLContexts;
 
 @RestController
 public class StockDataService {
+	private static Log logger = LogFactory.getLog(StockDataService.class);
 
 	@Autowired
 	private RestTemplate template;
@@ -36,6 +38,7 @@ public class StockDataService {
 				    )
 				    .setProtocol("TLSv1.2")
 				    .build();
+			logger.info("SSL context has been set up.");
 		} catch (Exception e) {
 			throw new IllegalStateException("Failed to setup client SSL context", e);
 		}
@@ -54,6 +57,7 @@ public class StockDataService {
 		HttpHeaders headers = new HttpHeaders();
 		headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
 		headers.setAccessControlAllowOrigin("*");
+		headers.setAccessControlAllowMethods(Arrays.asList(HttpMethod.GET, HttpMethod.OPTIONS));
 		HttpEntity<String> entity = new HttpEntity<String>(headers);
 		
 		StringBuilder sb = new StringBuilder();
@@ -64,6 +68,7 @@ public class StockDataService {
 		sb.append("&outputsize=");
 		sb.append(outputsize);
 		sb.append("&apikey=S9BAE8JQTXYTDQJS");
+		logger.info("invoking remote service call on " + sb.toString());
 		return template.exchange(sb.toString(), HttpMethod.GET, entity, String.class).getBody();
 	}
 }
