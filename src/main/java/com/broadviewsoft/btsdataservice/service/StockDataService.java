@@ -33,7 +33,7 @@ public class StockDataService {
 		SSLContext sslContext;
 		try {
 			sslContext = SSLContexts.custom()
-	                .loadTrustMaterial(new File("keystore/bts.jks"),
+	                .loadTrustMaterial(new File("keystore/cacerts"),
 				        "changeit".toCharArray()
 				    )
 				    .setProtocol("TLSv1.2")
