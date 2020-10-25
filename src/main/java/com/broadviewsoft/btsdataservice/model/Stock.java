@@ -18,6 +18,7 @@ public class Stock implements Cloneable {
 	private Long id;
 	
 	@Enumerated(EnumType.STRING)
+	@Column(name = "currency")
 	private CurrencyType currencyType;
 	
 	@Column(name = "symbol")

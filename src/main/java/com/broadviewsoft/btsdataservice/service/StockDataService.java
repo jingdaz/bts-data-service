@@ -15,8 +15,13 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
+import com.broadviewsoft.btsdataservice.model.AlphaVantageItem;
+import com.broadviewsoft.btsdataservice.model.StockItem;
+import com.broadviewsoft.btsdataservice.util.Util;
+
 import java.io.File;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.net.ssl.SSLContext;
 import org.apache.http.ssl.SSLContexts;
@@ -50,10 +55,12 @@ public class StockDataService {
 
 	@CrossOrigin(origins = "http://localhost:4200")
 	@RequestMapping(value = "/bts/api/v1/stockdata")
-	public String getStockData(
+	public List<StockItem> getStockData(
 			@RequestParam(value = "symbol") String symbol, 
 			@RequestParam(value = "interval") String interval, 
-			@RequestParam(value = "outputsize") String outputsize) {
+			@RequestParam(value = "outputsize") String outputsize,
+			@RequestParam(value = "datatype") String datatype
+			) {
 		HttpHeaders headers = new HttpHeaders();
 		headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
 		headers.setAccessControlAllowOrigin("*");
@@ -67,8 +74,16 @@ public class StockDataService {
 		sb.append(interval);
 		sb.append("&outputsize=");
 		sb.append(outputsize);
+		sb.append("&datatype=");
+		sb.append(datatype);
 		sb.append("&apikey=S9BAE8JQTXYTDQJS");
 		logger.info("invoking remote service call on " + sb.toString());
-		return template.exchange(sb.toString(), HttpMethod.GET, entity, String.class).getBody();
+		String response = template.exchange(sb.toString(), HttpMethod.GET, entity, String.class).getBody(); 
+		logger.info("response from remote: " + response);
+		AlphaVantageItem avItem = Util.convertAlphaAdvtangeData(response);
+		logger.info("converted response: " + avItem);
+		List<StockItem> result = Util.convertStockItem(avItem);
+		logger.info("size of stockItem list: " + result.size());
+		return result;
 	}
 }

@@ -1,18 +1,15 @@
 package com.broadviewsoft.btsdataservice.model;
 
-import java.util.HashMap;
-import java.util.Map;
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "1. open", "2. high", "3. low", "4. close", "5. volume" })
+@JsonPropertyOrder({ "0. timestamp", "1. open", "2. high", "3. low", "4. close", "5. volume" })
+public class TimeSeries {
 
-public class StockPrice {
+	@JsonProperty("0. timestamp")
+	private String _0Timestamp;
 	@JsonProperty("1. open")
 	private String _1Open;
 	@JsonProperty("2. high")
@@ -23,8 +20,16 @@ public class StockPrice {
 	private String _4Close;
 	@JsonProperty("5. volume")
 	private String _5Volume;
-	@JsonIgnore
-	private Map<String, Object> additionalProperties = new HashMap<String, Object>();
+
+	@JsonProperty("0. timestamp")
+	public String get0Timestamp() {
+		return _0Timestamp;
+	}
+
+	@JsonProperty("0. timestamp")
+	public void set0Timestamp(String _0Timestamp) {
+		this._0Timestamp = _0Timestamp;
+	}
 
 	@JsonProperty("1. open")
 	public String get1Open() {
@@ -76,14 +81,8 @@ public class StockPrice {
 		this._5Volume = _5Volume;
 	}
 
-	@JsonAnyGetter
-	public Map<String, Object> getAdditionalProperties() {
-		return this.additionalProperties;
+	@Override
+	public String toString() {
+		return "Sample";
 	}
-
-	@JsonAnySetter
-	public void setAdditionalProperty(String name, Object value) {
-		this.additionalProperties.put(name, value);
-	}
-
 }

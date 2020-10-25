@@ -182,6 +182,33 @@ public class Constants {
 
 	public static final boolean HUMAN_STRATEGY_ENABLED = true;
 
+	/* Constants that are used for AlphaVantage data */
+	public static final String ALPHAVANTAGE_TIMESTAMP_PATTERN = "yyyy-mm-dd hh:mm:ss";
+	public static final String TIME_SERIERS_OLD = "\"Time Series\": {";
+	public static final String TIME_SERIERS_NEW = "\"Time Series\": [";
+	// timestamp value
+	public static final String TIMESTAMP_PREFIX_OLD = "        \"2020";
+	public static final String TIMESTAMP_PREFIX_NEW = "        {   \"0. timestamp\": \"2020";
+	// timestamp value
+	public static final String TIMESTAMP_VALUE_OLD = ":00\": {";
+	public static final String TIMESTAMP_VALUE_NEW = ":00\",";
+	// timeseries bracket ending
+	public static final String TIME_SERIES_BRACKET_ENDING_OLD = "    },";
+	public static final String TIME_SERIES_BRACKET_ENDING_NEW = "    BRACKETCOLON]";
+	// timeseries bracket ending
+	public static final String TIME_SERIES_TAB_BRACKET_OLD = "        }";
+	public static final String TIME_SERIES_TAB_BRACKET_NEW = "        CUREBRACKET";
+	// timeseries array ending
+	public static final String TIME_SERIES_ENDING_OLD = "    }";
+	public static final String TIME_SERIES_ENDING_NEW = "    ]";
+	// timeseries unified style
+	public static final String LEFT_BRACKET_OLD = "(";
+	public static final String LEFT_BRACKET_NEW = "LEFTBRACKET";
+	public static final String RIGHT_BRACKET_OLD = ")";
+	public static final String RIGHT_BRACKET_NEW = "RIGHTBRACKET";
+	public static final String TIME_SERIES_PERIOD_OLD = "Time Series LEFTBRACKET\\d{1,2}minRIGHTBRACKET";
+	public static final String TIME_SERIES_PERIOD_NEW = "Time Series";
+
 	public static List<Date> MARKET_CLOSE_DAYS = new ArrayList<Date>();
 	public static List<Date> MARKET_CLOSE_EARLY_DAYS = new ArrayList<Date>();
 

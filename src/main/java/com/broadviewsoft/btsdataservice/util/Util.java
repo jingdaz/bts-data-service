@@ -23,13 +23,17 @@ import org.supercsv.cellprocessor.constraint.LMinMax;
 import org.supercsv.cellprocessor.constraint.NotNull;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 
+import com.broadviewsoft.btsdataservice.model.AlphaVantageItem;
 import com.broadviewsoft.btsdataservice.model.DataFileType;
 import com.broadviewsoft.btsdataservice.model.Period;
 import com.broadviewsoft.btsdataservice.model.StockItem;
+import com.broadviewsoft.btsdataservice.model.TimeSeries;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Util {
 	private static Log logger = LogFactory.getLog(Util.class);
-
+	private static DateFormat formatter = new SimpleDateFormat(Constants.ALPHAVANTAGE_TIMESTAMP_PATTERN);
 	public static String format(double price) {
 		return Constants.STOCK_PRICE_FORMATTER.format(price);
 	}
@@ -469,6 +473,83 @@ public class Util {
 		}
 		
 		return result;
+	}
+	
+	/**
+	 * Utility method to convert response string into AlphaVantageItem
+	 * 
+	 * @param input response string from AlphaVantage API
+	 * @return instance of AlphaVantageItem converted from response string
+	 * 
+	 */
+	public static AlphaVantageItem convertAlphaAdvtangeData(String input) {
+		input = input.replace(Constants.TIMESTAMP_PREFIX_OLD, Constants.TIMESTAMP_PREFIX_NEW);
+		input = input.replace(Constants.TIMESTAMP_VALUE_OLD, Constants.TIMESTAMP_VALUE_NEW);
+		input = input.replace(Constants.TIME_SERIES_BRACKET_ENDING_OLD, Constants.TIME_SERIES_BRACKET_ENDING_NEW);
+		input = input.replace(Constants.TIME_SERIES_TAB_BRACKET_OLD, Constants.TIME_SERIES_TAB_BRACKET_NEW);
+		input = input.replace(Constants.TIME_SERIES_ENDING_OLD, Constants.TIME_SERIES_ENDING_NEW);
+		input = input.replace(Constants.TIME_SERIES_BRACKET_ENDING_NEW, Constants.TIME_SERIES_BRACKET_ENDING_OLD);
+		input = input.replace(Constants.TIME_SERIES_TAB_BRACKET_NEW, Constants.TIME_SERIES_TAB_BRACKET_OLD);
+		input = input.replace(Constants.LEFT_BRACKET_OLD, Constants.LEFT_BRACKET_NEW);
+		input = input.replace(Constants.RIGHT_BRACKET_OLD, Constants.RIGHT_BRACKET_NEW);
+		input = input.replaceAll(Constants.TIME_SERIES_PERIOD_OLD, Constants.TIME_SERIES_PERIOD_NEW);
+		input = input.replace(Constants.LEFT_BRACKET_NEW, Constants.LEFT_BRACKET_OLD);
+		input = input.replace(Constants.RIGHT_BRACKET_NEW, Constants.RIGHT_BRACKET_OLD);
+		input = input.replace(Constants.TIME_SERIERS_OLD, Constants.TIME_SERIERS_NEW);
+
+		ObjectMapper objectMapper = new ObjectMapper();
+		AlphaVantageItem avItem = null;
+		try {
+			avItem = objectMapper.readValue(input, AlphaVantageItem.class);
+		} catch (JsonProcessingException e) {
+			logger.error("Error occurs during converting JSON string into AlphaVantage data..." + e.getMessage());
+		}
+		return avItem;
+	}
+	
+	/**
+	 * Utility method to  convert AlphaVantageItem into StockItem
+	 * 
+	 * @param item instance of AlphaVantageItem
+	 * @return List of StockItem embedded in AlphaVantageItem
+	 */
+	public static List<StockItem> convertStockItem(AlphaVantageItem item) {
+		List<StockItem> items = new ArrayList<StockItem>(item.getTimeSeries().size());
+		logger.debug("AlphaVantageItem has list size of " + item.getTimeSeries().size());
+		String symbol = item.getMetaData().get2Symbol();
+		String interval = item.getMetaData().get4Interval();
+		int minsValue = Integer.parseInt(interval.substring(0, interval.indexOf("min")));
+		logger.debug("AlphaVantageItem has interval of " + minsValue);
+		Period period = GetEnumByOdinal(minsValue);
+		
+		for (TimeSeries ts : item.getTimeSeries()) {
+			StockItem st = new StockItem(symbol, period);
+			try {
+				st.setTimestamp(formatter.parse(ts.get0Timestamp()));
+			} catch (ParseException e) {
+				logger.error("Date format error from " + ts.get0Timestamp());
+				continue;
+			}
+			st.setOpen(Double.parseDouble(ts.get1Open()));
+			st.setHigh(Double.parseDouble(ts.get2High()));
+			st.setLow(Double.parseDouble(ts.get3Low()));
+			st.setClose(Double.parseDouble(ts.get4Close()));
+			st.setVolume(Long.parseLong(ts.get5Volume()));
+			items.add(st);
+		}
+		return items;
+		
+	}
+
+	public static Period GetEnumByOdinal(int i) {
+		for (Period p : Period.values()) {
+			if (p.minutes() == i) {
+				return p;
+			}
+		}
+		
+		// DAY as default period
+		return Period.DAY;
 	}
 	
 	public static void main(String[] args) throws ParseException {
