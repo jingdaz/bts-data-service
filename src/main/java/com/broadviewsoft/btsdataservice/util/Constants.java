@@ -183,7 +183,10 @@ public class Constants {
 	public static final boolean HUMAN_STRATEGY_ENABLED = true;
 
 	/* Constants that are used for AlphaVantage data */
-	public static final String ALPHAVANTAGE_TIMESTAMP_PATTERN = "yyyy-mm-dd hh:mm:ss";
+	public static final String ALPHAVANTAGE_JSON_TIMESTAMP_PATTERN = "yyyy-mm-dd hh:mm:ss";
+	public static final String ALPHAVANTAGE_CSV_DAYWEEK_TIMESTAMP_PATTERN = "yyyy-MM-dd";
+	public static final String ALPHAVANTAGE_CSV_INTRADAY_TIMESTAMP_PATTERN = "yyyy-MM-dd HH:mm:ss";
+	
 	public static final String TIME_SERIERS_OLD = "\"Time Series\": {";
 	public static final String TIME_SERIERS_NEW = "\"Time Series\": [";
 	// timestamp value

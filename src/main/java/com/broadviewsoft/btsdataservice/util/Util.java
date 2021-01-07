@@ -4,11 +4,13 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.StringReader;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -16,6 +18,7 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.supercsv.cellprocessor.Optional;
 import org.supercsv.cellprocessor.ParseDate;
 import org.supercsv.cellprocessor.ParseDouble;
@@ -26,14 +29,19 @@ import org.supercsv.cellprocessor.ift.CellProcessor;
 import com.broadviewsoft.btsdataservice.model.AlphaVantageItem;
 import com.broadviewsoft.btsdataservice.model.DataFileType;
 import com.broadviewsoft.btsdataservice.model.Period;
+import com.broadviewsoft.btsdataservice.model.Stock;
 import com.broadviewsoft.btsdataservice.model.StockItem;
 import com.broadviewsoft.btsdataservice.model.TimeSeries;
+import com.broadviewsoft.btsdataservice.repository.StockRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Util {
 	private static Log logger = LogFactory.getLog(Util.class);
-	private static DateFormat formatter = new SimpleDateFormat(Constants.ALPHAVANTAGE_TIMESTAMP_PATTERN);
+	private static DateFormat jsonFormatter = new SimpleDateFormat(Constants.ALPHAVANTAGE_JSON_TIMESTAMP_PATTERN);
+	private static DateFormat csvDayweekFormatter = new SimpleDateFormat(Constants.ALPHAVANTAGE_CSV_DAYWEEK_TIMESTAMP_PATTERN);
+	private static DateFormat csvIntradayFormatter = new SimpleDateFormat(Constants.ALPHAVANTAGE_CSV_INTRADAY_TIMESTAMP_PATTERN);
+	
 	public static String format(double price) {
 		return Constants.STOCK_PRICE_FORMATTER.format(price);
 	}
@@ -357,8 +365,8 @@ public class Util {
 			StockItem item33 = list3.get(j++);
 			StockItem item36 = list3.get(j++);
 
-			StockItem item1 = new StockItem(item22.getStock().getSymbol(), item22.getPeriod());
-			StockItem item5 = new StockItem(item26.getStock().getSymbol(), item22.getPeriod());
+			StockItem item1 = new StockItem(item22.getStock(), item22.getPeriod());
+			StockItem item5 = new StockItem(item26.getStock(), item22.getPeriod());
 
 			// update timestamp
 			item1.setTimestamp(new Date(item22.getTimestamp().getTime() - 60*1000));
@@ -478,11 +486,11 @@ public class Util {
 	/**
 	 * Utility method to convert response string into AlphaVantageItem
 	 * 
-	 * @param input response string from AlphaVantage API
+	 * @param input response with json string from AlphaVantage API
 	 * @return instance of AlphaVantageItem converted from response string
 	 * 
 	 */
-	public static AlphaVantageItem convertAlphaAdvtangeData(String input) {
+	public static AlphaVantageItem convertAlphaAdvtangeJsonData(String input) {
 		input = input.replace(Constants.TIMESTAMP_PREFIX_OLD, Constants.TIMESTAMP_PREFIX_NEW);
 		input = input.replace(Constants.TIMESTAMP_VALUE_OLD, Constants.TIMESTAMP_VALUE_NEW);
 		input = input.replace(Constants.TIME_SERIES_BRACKET_ENDING_OLD, Constants.TIME_SERIES_BRACKET_ENDING_NEW);
@@ -508,24 +516,58 @@ public class Util {
 	}
 	
 	/**
+	 * Utility method to convert response csv string into AlphaVantageItem
+	 * 
+	 * @param input response with csv string from AlphaVantage API
+	 * @return instance of AlphaVantageItem converted from response string
+	 * 
+	 */
+	public static AlphaVantageItem convertAlphaAdvtangeCsvData(String input) {
+		input = input.replace(Constants.TIMESTAMP_PREFIX_OLD, Constants.TIMESTAMP_PREFIX_NEW);
+		input = input.replace(Constants.TIMESTAMP_VALUE_OLD, Constants.TIMESTAMP_VALUE_NEW);
+		input = input.replace(Constants.TIME_SERIES_BRACKET_ENDING_OLD, Constants.TIME_SERIES_BRACKET_ENDING_NEW);
+		input = input.replace(Constants.TIME_SERIES_TAB_BRACKET_OLD, Constants.TIME_SERIES_TAB_BRACKET_NEW);
+		input = input.replace(Constants.TIME_SERIES_ENDING_OLD, Constants.TIME_SERIES_ENDING_NEW);
+		input = input.replace(Constants.TIME_SERIES_BRACKET_ENDING_NEW, Constants.TIME_SERIES_BRACKET_ENDING_OLD);
+		input = input.replace(Constants.TIME_SERIES_TAB_BRACKET_NEW, Constants.TIME_SERIES_TAB_BRACKET_OLD);
+		input = input.replace(Constants.LEFT_BRACKET_OLD, Constants.LEFT_BRACKET_NEW);
+		input = input.replace(Constants.RIGHT_BRACKET_OLD, Constants.RIGHT_BRACKET_NEW);
+		input = input.replaceAll(Constants.TIME_SERIES_PERIOD_OLD, Constants.TIME_SERIES_PERIOD_NEW);
+		input = input.replace(Constants.LEFT_BRACKET_NEW, Constants.LEFT_BRACKET_OLD);
+		input = input.replace(Constants.RIGHT_BRACKET_NEW, Constants.RIGHT_BRACKET_OLD);
+		input = input.replace(Constants.TIME_SERIERS_OLD, Constants.TIME_SERIERS_NEW);
+
+		ObjectMapper objectMapper = new ObjectMapper();
+		AlphaVantageItem avItem = null;
+		try {
+			avItem = objectMapper.readValue(input, AlphaVantageItem.class);
+		} catch (JsonProcessingException e) {
+			logger.error("Error occurs during converting JSON string into AlphaVantage data..." + e.getMessage());
+		}
+		return avItem;
+	}
+
+	/**
 	 * Utility method to  convert AlphaVantageItem into StockItem
 	 * 
 	 * @param item instance of AlphaVantageItem
 	 * @return List of StockItem embedded in AlphaVantageItem
 	 */
-	public static List<StockItem> convertStockItem(AlphaVantageItem item) {
+	public static List<StockItem> convertStockItem(Stock stock, AlphaVantageItem item) {
+		if (item == null) {
+			return new ArrayList<StockItem>();
+		}
 		List<StockItem> items = new ArrayList<StockItem>(item.getTimeSeries().size());
 		logger.debug("AlphaVantageItem has list size of " + item.getTimeSeries().size());
-		String symbol = item.getMetaData().get2Symbol();
 		String interval = item.getMetaData().get4Interval();
 		int minsValue = Integer.parseInt(interval.substring(0, interval.indexOf("min")));
 		logger.debug("AlphaVantageItem has interval of " + minsValue);
 		Period period = GetEnumByOdinal(minsValue);
 		
 		for (TimeSeries ts : item.getTimeSeries()) {
-			StockItem st = new StockItem(symbol, period);
+			StockItem st = new StockItem(stock, period);
 			try {
-				st.setTimestamp(formatter.parse(ts.get0Timestamp()));
+				st.setTimestamp(jsonFormatter.parse(ts.get0Timestamp()));
 			} catch (ParseException e) {
 				logger.error("Date format error from " + ts.get0Timestamp());
 				continue;
@@ -537,10 +579,95 @@ public class Util {
 			st.setVolume(Long.parseLong(ts.get5Volume()));
 			items.add(st);
 		}
+		Collections.reverse(items);
 		return items;
-		
 	}
+	
+	/**
+	 * Utility method to  convert AlphaVantage csv response into StockItem
+	 * 
+	 * @param csv string of response from AlphaVantage response
+	 * @return List of StockItem embedded in AlphaVantageItem
+	 */
+	public static List<StockItem> convertStockItem(Stock stock, String interval, String csv) {
+		List<StockItem> items = new ArrayList<StockItem>();
+		if (csv == null) {
+			return items;
+		}
 
+		Period period;
+		if (interval.equalsIgnoreCase(Period.WEEK.name())) {
+			period = Period.WEEK;
+		} else if (interval.equalsIgnoreCase(Period.DAY.name())) {
+			period = Period.DAY;
+		} else {
+			int minsValue = Integer.parseInt(interval.substring(0, interval.indexOf("min")));
+			logger.debug("AlphaVantageItem has interval of " + minsValue);
+			period = GetEnumByOdinal(minsValue);
+		}
+		
+		BufferedReader bufReader = new BufferedReader(new StringReader(csv));
+		String line;
+		try {
+			line = bufReader.readLine();
+		
+			while ((line=bufReader.readLine()) != null) {
+				StockItem st = new StockItem(stock, period);
+				String[] itemObj = line.split(Constants.CSV_SEPARATOR);
+				if (period == Period.WEEK || period == Period.DAY) {
+					st.setTimestamp(csvDayweekFormatter.parse(itemObj[0]));
+				} else {
+					st.setTimestamp(csvIntradayFormatter.parse(itemObj[0]));
+				}
+				st.setOpen(Double.parseDouble(itemObj[1]));
+				st.setHigh(Double.parseDouble(itemObj[2]));
+				st.setLow(Double.parseDouble(itemObj[3]));
+				st.setClose(Double.parseDouble(itemObj[4]));
+				st.setVolume(Long.parseLong(itemObj[5]));
+				items.add(st);
+			} 
+		}catch (IOException | ParseException e1) {
+			e1.printStackTrace();
+		}
+		Collections.reverse(items);
+		return items;
+	}
+	
+	/**
+	 * find the last index of a StockItem list 
+	 * which has the lastInsert timestamp
+     *
+	 * @param lastInsert timestamp of insertion from StockItems
+	 * @param items list of StockItems to be inserted
+	 * @return index of list just after the lastInsert timestamp
+	 * 
+	 */
+	public static int findLastIndex(Date lastInsert, List<StockItem> items) {
+		// boundary cases
+		if (lastInsert == null || items == null || items.isEmpty()) {
+			return 0;
+		}
+		
+		// normal cases
+		int left = 0;
+		int right = items.size() - 1;
+		
+		while (left <= right) {
+			int mid = (left + right) / 2;
+			Date date = items.get(mid).getTimestamp();
+			
+			if (date.equals(lastInsert)) {
+				return mid + 1;
+			} else if (date.after(lastInsert)) {
+				right = mid - 1;
+			} else {
+				left = mid + 1;
+			}
+		}
+		
+		return left;
+	}
+	
 	public static Period GetEnumByOdinal(int i) {
 		for (Period p : Period.values()) {
 			if (p.minutes() == i) {

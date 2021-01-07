@@ -42,17 +42,15 @@ public class StockItem implements Comparable<Object> {
 	private long volume;
 
 	public StockItem() {
-		stock = new Stock("UVXY");
-		period = Period.MIN05;
 	}
 
-	public StockItem(String symbol, Period period) {
-		stock = new Stock(symbol);
+	public StockItem(Stock stock, Period period) {
+		this.stock = stock;
 		this.period = period;
 	}
 
 	public StockItem(StockItem item) {
-		this.stock = new Stock(item.getStock().getSymbol());
+		this.stock = item.getStock();
 		this.timestamp = item.getTimestamp();
 		this.period = item.getPeriod();
 		this.open = item.getOpen();
